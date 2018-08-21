@@ -2,9 +2,14 @@
 
 1. **[General Structure](#general-structure)** 
 	[ [Properties](#general-structure--properties) ]
+	[ [Multi-property](#1.4-multi-property-components) ]
 1. **[Destructuring](#destructuring)** 
 	[ [Objects](#destructuring--objects) ] 
 	[ [Get/Set](#destructuring--get-set) ]
+1. **[Data](#data)**
+	[ [Data Binding](#data--data-binding) ]
+1. **[Computed Properties](#computed-properties)**
+  [ [Brace Expansion](#computed-properties--brace-expansion) ]
 1. **[CSS](#css)**
 	[ [Usage](#css--usage) ]
 1. **[Actions](#actions)**
@@ -13,6 +18,8 @@
 	[ [ Overall Application Errors](#errorHandling--overallApplication) ]
 1. **[Testing](#testing)**
 1. **[Definition of Ready](#deployment-checklist)**
+1. **[Addons](#addons)**
+  [ [Versioning](#versioning) ]
 
 <a name="general-structure"></a>
 ## General Structure
@@ -47,6 +54,50 @@ lastName: attr('string'),
 fullName: belongsTo('person')
 ```
 
+- 1.3 **Default Unassigned Property**
+
+  + When declaring an unassigned property we should default it to `null` instead of `undefined`.
+
+  + Why? Because defining a property as `undefined` has the meaning of we didn't define it. By setting it to `null` you are explicitly telling the app that the property has been declared.
+  
+```Javascript
+// bad
+foo: undefined
+
+//good
+foo: null
+```
+
+<!-- <a name="general-structure--multiProperty"></a> -->
+- ##### 1.4 Multi-property Components
+
+	> Why? Better readability. 
+
+  + All components written in handlebars that have at least one property should be written in a multi-line format.
+
+  + Closing handlebars `}}` should be on a new line when writing in a multi-line format
+
+```Javascript
+// bad
+{{my-component CreamSoda='nope' Pepsi='nope'}}
+
+{{Bryan-component theRightWay='nope'}}
+
+{{my-component
+	Sprite='nope' 
+	Fanta='nope'}}
+
+//good
+{{my-component
+	Coke='yes' 
+	SierraMist='yes'
+}}
+
+{{Everyone-component
+	theRightWay='yes'
+}}
+```
+
 <a name="destructuring"></a>
 ## Destructuring
 Extract multiple values from data stored in objects and arrays.
@@ -62,8 +113,8 @@ JavaScript modules make the framework easier to document, make the distinction b
 import Ember from 'ember';
 
 export default Ember.Component.extend({
-  session: Ember.inject.service(),
-  title: 'ASH Development'
+    session: Ember.inject.service(),
+    title: 'ASH Development'
 });
 
 //Good
@@ -71,8 +122,8 @@ import Component from '@ember/component';
 import { inject as service } from '@ember/service';
 
 export default Component.extend({
-  session: service(),
-  title: 'ASH Development'
+    session: service(),
+    title: 'ASH Development'
 });
 ```
 <a name="destructuring--get-set"></a>
@@ -85,12 +136,7 @@ this.set('isDestructured', false);
 this.get('isDestructured'); //false
 
 //Good
-import Ember from 'ember';
-
-const {
-  get,
-  set
-} = Ember;
+import { get, set } from '@ember/object';
 
 set(this, 'isDestructured', true);
 get(this, 'isDestructured'); //true
@@ -98,11 +144,96 @@ get(this, 'isDestructured'); //true
 set(someObject, 'isUpdated', true);
 get(someObject, 'isUpdated'); //true
 ```
+
+
+<a name="data"></a>
+## Data
+
+<a name="data--data-binding"></a>
+### 3.1 Data Binding
+
+Any new code written by ASH should only contain one-way data-binding. Third-party addons using two-way data-binding is ok, but be cautious and conscious of the side effects it can have.
+
+> Why? Two-way data-binding can have unexpected side effects; data flowing one way keeps things more predictable. For example: if you pass the same data to 2 components and they both are allowed to change it. DDAU allows the parent to arbitrate those changes and resolve conflicts. Otherwise component A can make changes you are not expecting in component B. This is not just a matter of 2 compoents, you can make a change to a child that propagates through the whole app.
+
+```hbs
+{{!--Bad--}}
+{{!--parent-component.hbs--}}
+{{my-cheesy-component 
+    myData = model
+}}
+```
+```Javascript
+//my-cheesy-component.js
+//The below code would update the parent and any other component the parentData object was passed to
+set(this, 'model.cheese', 'gouda')
+```
+```hbs
+{{!--Good--}}
+{{!--parent-component.hbs--}}
+{{my-cheesy-component 
+    myData = model
+    changeCheese = (action 'newCheesePlease')
+}}
+```
+```Javascript
+//my-cheesy-component.js
+actions: {
+    quesoChanger(e) {
+        e.preventDefault();
+        get(this, 'changeCheese')(get(this, 'cheese'));
+    }
+}
+```
+
+```hbs
+{{!--my-cheesy-component.hbs--}}
+<form onSubmit=(action 'quesoChanger')>
+    <input type='text' value={{cheese}} onChange={{action (mut cheese) value="target.value"}}>
+    <button type='submit'>Change Cheese</button>
+</form>
+```
+```Javascript
+//parent component.js, router, or controller
+actions: {
+    newCheesePlease(cheeseType){
+        set(this, 'model.cheese', cheeseType);
+    }
+}
+```
+*Twiddle Demo: <a href="https://ember-twiddle.com/386c86a1ad7fa9d15e9cc1f699e5f539">click here</a>*
+
+<a name="computed-properties"></a>
+## Computed Properties
+
+<a name="computed-properties--brace-expansion"></a>
+### 4.1 Brace Expansion
+
+When a computed property depends on multiple properties of the same object, specify the properties using brace expansion.
+> Why? Using brace expansion in computed properties makes our code more organized and easier to read, as it organizes dependent keys. 
+
+```javascript 
+// Bad 
+fullname: computed('user.firstname', 'user.lastname', function() {
+    const { firstname, lastname } = get(this, 'user');
+
+    return `${firstname} ${lastname}`;
+})
+
+// Good
+fullname: computed('user.{firstname,lastname}', function() {
+    const { firstname, lastname } = get(this, 'user');
+
+    return `${firstname} ${lastname}`;
+})
+```
+
+
 <a name="css"></a>
 ## CSS
 
 <a name="css--usage"></a>
-### 3.1 Usage
+### 5.1 Usage
 CSS is permitted (and encouraged) in apps and addons under certain circumstances
 
 > Why? Flow, interaction and breakpoints generally belong to the component and not the domain (host site). Properties such as colors, fonts styles, etc. should belong to host site, so that each site can have its own identity. Moving CSS into component files will also cut down on the size of domain CSS bundles and help mitigate the issue of shipping a lot of CSS that belongs to components not in use on that site.
@@ -133,65 +264,65 @@ CSS is permitted (and encouraged) in apps and addons under certain circumstances
 // Bad
 // app/style/appName.scss
 .chats {
-  padding: 1rem;
-  display: flex;
-  background: $color1;
+    padding: 1rem;
+    display: flex;
+    background: $color1;
 
-  .chatMsg {
-    font-family: $font1;
-    font-weight: 700;
-    text-transform: uppercase;    
-    background: $color2;
-    color: $color1;
-    transition: all 1s ease-in-out;
-  }
+    .chatMsg {
+        font-family: $font1;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: $color2;
+        color: $color1;
+        transition: all 1s ease-in-out;
+    }
 }
 
 // Good
 // base/social.scss
 .chats {
-  background: $color1;
+    background: $color1;
 
-  .chatMsg {
-    font-family: $font1;
-    font-weight: 700;
-    text-transform: uppercase;    
-    background: $color2;
-    color: $color1;
-  }
+    .chatMsg {
+        font-family: $font1;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: $color2;
+        color: $color1;
+    }
 }
 
 // app/style/appName.scss
 .chats {
-  padding: 1rem;
-  display: flex;
+    padding: 1rem;
+    display: flex;
 
-  .chatMsg {
-    transition: all 1s ease-in-out;
-  }
+    .chatMsg {
+        transition: all 1s ease-in-out;
+    }
 }
 ```
 <a name="actions"></a>
 ## Actions
 
 <a name="actions--location"></a>
-### 4.1 Location
+### 6.1 Location
 
  - Form Actions should be placed on the form element
 
 ```html
 //Bad
 <form>
-  <input id="firstName" type="text" />
-  <input id="lastName" type="text" />
-  <button type="submit" {{action 'SubmitForm'}}> Submit</button>
+    <input id="firstName" type="text" />
+    <input id="lastName" type="text" />
+    <button type="submit" {{action 'SubmitForm'}}> Submit</button>
 </form>
 
 //Good
 <form {{action 'SubmitForm' on='submit'}}>
-  <input id="firstName" type="text" />
-  <input id="lastName" type="text" />
-  <button type="submit"> Submit</button>
+    <input id="firstName" type="text" />
+    <input id="lastName" type="text" />
+    <button type="submit"> Submit</button>
 </form>
 
 ```
@@ -200,63 +331,61 @@ CSS is permitted (and encouraged) in apps and addons under certain circumstances
 ```html
 //Bad
 <div class="container" {{action 'showHide'}}>
- <button type="submit">Submit</button>
+    <button type="submit">Submit</button>
 </div>
 
 //Good
 <div class="container">
- <button type="submit" {{action 'showHide'}}>Submit</button>
+    <button type="submit" {{action 'showHide'}}>Submit</button>
 </div>
 ```
 
 <a name="errorHandling"></a>
 ## Error Handling
 <a name="errorHandling--overallApplication"></a>
-### 5.1 Overall Application Errors
+### 7.1 Overall Application Errors
 Every app should contain a base error function within the application route.
 > Why? Developers are not always perfect, this will insure that even missed errors from other components, controllers or routes will be handled at the application level. Uncaught errors lead to a bad user experiences.
 
 
 ```javascript
 //Example code for route/application.js
-const {
-  set,
-  get
-} = Ember;
+import Route from '@ember/routing/route';
+import { get, set } from '@ember/object';
 
 export default Route.extend({
-  genericError: 'Hmm, something went wrong.',
+    genericError: 'Hmm, something went wrong.',
 
-  actions: {
-    error(error){
-      //grabbing app container for a place to put the error so it will show to the user
-      const app = document.getElementById('app-container');
+    actions: {
+        error(error){
+            //grabbing app container for a place to put the error so it will show to the user
+            const app = document.getElementById('app-container');
 
-      //getting the content for the error to show the user
-      if(typeof error === 'string') {
-        //if its a string set the errorToShow property to that string
-        set(this, 'errorToShow', error);
-      } else if (error && error.message) {
-        //if it has an error.message log the message to the console for debugging
-        console.error(error.message);
-        //if it is not a string set the errorToShow property to the genericError
-        set(this, 'errorToShow', get(this, 'genericError'))
-      } else {
-        //if it is not a string set the errorToShow property to the genericError
-        set(this, 'errorToShow', get(this, 'genericError'))
-      }
+            //getting the content for the error to show the user
+            if(typeof error === 'string') {
+                //if its a string set the errorToShow property to that string
+                set(this, 'errorToShow', error);
+            } else if (error && error.message) {
+                //if it has an error.message log the message to the console for debugging
+                console.error(error.message);
+                //if it is not a string set the errorToShow property to the genericError
+                set(this, 'errorToShow', get(this, 'genericError'))
+            } else {
+                //if it is not a string set the errorToShow property to the genericError
+                set(this, 'errorToShow', get(this, 'genericError'))
+            }
 
-      //adds the error to the app container for users to see error message, so they are not left with a blank app container
-      app.innerHTML = `<div class='error'>${get(this, 'errorToShow')}</div>`
+            //adds the error to the app container for users to see error message, so they are not left with a blank app container
+            app.innerHTML = `<div class='error'>${get(this, 'errorToShow')}</div>`
+        }
     }
-  }
 });
 ```
 <a name="testing"></a>
 ## Testing
 
 <a name="testing--test-scripts"></a>
-### 5.1 Test Scripts
+### 8.1 Test Scripts
 
 > Why? To allow us to establish and hold to a standard of code coverage in all of our apps with meaningful test writing and the ability to gate deployments when those standards are not met.
 
@@ -270,7 +399,7 @@ The `scripts` section in your __package.json__ file should include the following
 "scripts": {
     "test": "cross-env COVERAGE=true ember test",
     "test-server": "cross-env COVERAGE=true ember test --server"
-  }
+}
 ```
 
 
@@ -329,3 +458,20 @@ Create a build definition for the app that will:
 
 ### 11. Checklist Violations
 `npm test` (in the build definition) will catch errors and reject build
+
+
+
+## Addons
+
+### 9.1 Versioning
+
+1. We define `1.0.0` release as the first version ready to be used by the end user. It may not be feature complete, but it should bring some benefit to our customers. `1.0.0` release should include tests and be bug free according to the developer. As soon as the package is ready to be used in production, it needs to be on version `1.0.0`.
+
+We follow [Semantic Versioning](https://semver.org/) standards for versioning our addons:
+1. **Major** version should be used when making incompatible API changes.
+
+1. **Minor** version should be used when adding new functionality in a backward compatible manner.
+> Note: When updating `ember-cli` , use **minor** update.
+
+1. **Patch** version should be used when making backward compatible bug fixes, documentation updates, small enhancements (e.g., performance) that do not add new feature, or dependency updates.
+

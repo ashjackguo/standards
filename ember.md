@@ -2,7 +2,7 @@
 
 1. **[General Structure](#general-structure)** 
 	[ [Properties](#general-structure--properties) ]
-	[ [Multi-property](#1.4-multiProperty-components) ]
+	[ [Multi-property](#14-multi-property-components) ]
 1. **[Destructuring](#destructuring)** 
 	[ [Objects](#destructuring--objects) ] 
 	[ [Get/Set](#destructuring--get-set) ]

@@ -2,7 +2,7 @@
 
 1. **[General Structure](#general-structure)** 
 	[ [Properties](#general-structure--properties) ]
-	[ [Multi-property](#1.4-multi-property-components) ]
+	[ [Multi-property](#1.4-multiProperty-components) ]
 1. **[Destructuring](#destructuring)** 
 	[ [Objects](#destructuring--objects) ] 
 	[ [Get/Set](#destructuring--get-set) ]
@@ -69,7 +69,7 @@ foo: null
 ```
 
 <!-- <a name="general-structure--multiProperty"></a> -->
-- ##### 1.4 multi-property Components
+- #### 1.4 multi-property Components
 
 	> Why? Better readability. 
 
